@@ -1,6 +1,8 @@
 import numpy as np
 from client import Client, JOINTS
 import sys
+import os
+import torch
 import math
 import torch.optim as optim
 
@@ -92,23 +94,27 @@ class Rewarder:
                 reward_string += "Reward for ball moving in opposite direction: 50\n"
 
         
-        # Reward for scoring
-        if my_score > old_my_score:
-            reward += 500
-            reward_string += "Reward for scoring: 500\n"
+        # # Reward for scoring
+        # if my_score > old_my_score:
+        #     reward += 500
+        #     reward_string += "Reward for scoring: 500\n"
 
-        if opp_score > old_opp_score:
-            reward -= 500
-            reward_string += "Reward for opponent scoring: -500\n"
+        # if opp_score > old_opp_score:
+        #     reward -= 500
+        #     reward_string += "Reward for opponent scoring: -500\n"
 
         self.last_state = new_state
-        print(reward_string)
+
+        if reward_string != "":
+            print(reward_string)
 
         return reward
 
 def train(cli):
     ram = buffer.MemoryBuffer(MAX_BUFFER)
-    trainer = t.Trainer(S_DIM, A_DIM, A_MAX, ram, "mps")
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print("Using device: ", device)
+    trainer = t.Trainer(S_DIM, A_DIM, A_MAX, ram, device)
 
     rewarder = Rewarder()
 
@@ -151,12 +157,12 @@ def train(cli):
 
 def is_episode_done(state):
     # one of the players has scored 11 points
-    if state[34] == 11 or state[35] == 11:
+    if state[34] % 11 == 0 or state[35] % 11 == 0:
         return True
 
     # simulation time is over 5 minutes
-    if state[36] > 300:
-        return True
+    # if state[36] > 300:
+    #     return True
     
     return False
 
